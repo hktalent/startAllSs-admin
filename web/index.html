@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>startAllSs 管理台</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>startAllSs 管理台</h1>
+  <span class="pill"><span id="ld-dot" class="dot"></span><span id="ld-state">…</span></span>
+  <span class="pill">自愈周期 <b id="ld-interval">?</b>s</span>
+  <span class="pill">runs <b id="ld-runs">?</b></span>
+  <span class="grow"></span>
+  <button id="btn-kick" title="立即触发一次 start">⚡ 触发</button>
+  <button id="btn-reload" title="重载 LaunchAgent">↻ 重载</button>
+</header>
+<nav class="tabs" id="tabs">
+  <div class="tab active" data-tab="svc">服务配置</div>
+  <div class="tab" data-tab="global">全局</div>
+  <div class="tab" data-tab="run">运行控制</div>
+  <div class="tab" data-tab="logs">日志</div>
+  <div class="tab" data-tab="ld">Launchd</div>
+</nav>
+<main>
+  <!-- 服务配置 -->
+  <section id="tab-svc">
+    <div class="panel">
+      <h2>服务列表</h2>
+      <div class="svc-list" id="svc-list"></div>
+    </div>
+    <div class="panel" id="svc-editor" style="display:none">
+      <h2>编辑服务 <span class="tag" id="ed-key"></span></h2>
+      <div class="row">
+        <div class="field"><label>展示名</label><input id="ed-name"></div>
+        <div class="field"><label>类型</label>
+          <select id="ed-type">
+            <option value="docker-single">docker-single</option>
+            <option value="docker-compose">docker-compose</option>
+            <option value="tmux">tmux</option>
+          </select>
+        </div>
+        <div class="field" style="min-width:320px"><label>项目根目录</label><input id="ed-dir"></div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <div class="field"><label>Docker 容器（逗号分隔）</label><input id="ed-containers"></div>
+        <div class="field"><label>启动命令</label><input id="ed-command" placeholder="如 python3 ./run.py"></div>
+        <div class="field"><label>tmux 会话</label><input id="ed-tmux"></div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <div class="field" style="min-width:90px;flex:0 0 90px"><label>协议</label>
+          <select id="ed-scheme"><option>http</option><option>https</option></select>
+        </div>
+        <div class="field" style="min-width:140px;flex:0 0 140px"><label>本地 Host</label><input id="ed-host"></div>
+        <div class="field" style="min-width:90px;flex:0 0 90px"><label>端口</label><input id="ed-port" type="number"></div>
+        <div class="field"><label>本地探活路径</label><input id="ed-lpath"></div>
+      </div>
+      <div style="margin-top:10px">
+        <label style="font-size:11px;color:var(--muted)">公网子域名（子域名 + 探活路径）</label>
+        <div id="ed-publics"></div>
+        <button class="icon-btn" id="ed-add-pub" style="margin-top:4px">＋ 增加子域名</button>
+      </div>
+      <div id="ed-extra" style="margin-top:10px"></div>
+      <div class="btnrow">
+        <button class="primary" id="ed-save">💾 保存到 config.json</button>
+        <button id="ed-render">👁 预览生成的 shell 配置</button>
+        <button class="primary" id="ed-apply">🚀 应用配置（写盘 + 重载 launchd）</button>
+      </div>
+      <pre class="out" id="ed-preview" style="display:none"></pre>
+    </div>
+  </section>
+
+  <!-- 全局 -->
+  <section id="tab-global" style="display:none">
+    <div class="panel">
+      <h2>全局常量</h2>
+      <div class="row">
+        <div class="field"><label>根域名</label><input id="g-base"></div>
+        <div class="field"><label>Cloudflared 容器</label><input id="g-cfc"></div>
+        <div class="field"><label>隧道 ID</label><input id="g-tid"></div>
+        <div class="field"><label>CF_MODE</label>
+          <select id="g-mode"><option value="container">container</option><option value="host">host</option></select>
+        </div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <div class="field"><label>CF_CONFIG</label><input id="g-cfg"></div>
+        <div class="field"><label>CF_LOG</label><input id="g-clog"></div>
+        <div class="field"><label>CF_TUNNEL_PIDFILE</label><input id="g-pid"></div>
+        <div class="field"><label>RUN_LOG</label><input id="g-rlog"></div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <div class="field" style="min-width:160px;flex:0 0 160px">
+          <label>自愈周期（秒）→ launchd StartInterval</label>
+          <input id="g-interval" type="number" min="10">
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>跳过开关（写入 *_ONLY / SKIP_*）</h2>
+      <div class="checks" id="g-skips"></div>
+    </div>
+    <div class="btnrow">
+      <button class="primary" id="g-save">💾 保存</button>
+      <button class="primary" id="g-apply">🚀 应用配置</button>
+    </div>
+  </section>
+
+  <!-- 运行控制 -->
+  <section id="tab-run" style="display:none">
+    <div class="panel">
+      <h2>运行控制</h2>
+      <div class="btnrow">
+        <button class="primary" data-act="start">▶ 启动 / 自愈</button>
+        <button data-act="status">⊞ 状态</button>
+        <button data-act="check">✔ 健康检查</button>
+        <button data-act="restart">↻ 重启</button>
+        <button class="danger" data-act="stop">■ 停止</button>
+        <button id="run-refresh" title="自动刷新状态">⟳ 自动刷新</button>
+      </div>
+      <pre class="out" id="run-out">点击上方按钮执行 sh startAllSs.sh …</pre>
+    </div>
+  </section>
+
+  <!-- 日志 -->
+  <section id="tab-logs" style="display:none">
+    <div class="panel">
+      <h2>日志 <button class="icon-btn" id="log-refresh" style="margin-left:auto">⟳ 刷新</button></h2>
+      <div class="row">
+        <div class="field" style="min-width:120px;flex:0 0 120px">
+          <label>文件</label>
+          <select id="log-file">
+            <option value="launchd">launchd（/tmp/startAllSs.launchd.log）</option>
+            <option value="compose">compose（RUN_LOG）</option>
+          </select>
+        </div>
+        <div class="field" style="min-width:90px;flex:0 0 90px">
+          <label>行数</label><input id="log-lines" type="number" value="200" min="20">
+        </div>
+      </div>
+      <pre class="out" id="log-out"></pre>
+    </div>
+  </section>
+
+  <!-- Launchd -->
+  <section id="tab-ld" style="display:none">
+    <div class="panel">
+      <h2>LaunchAgent</h2>
+      <div class="kv" id="ld-kv"></div>
+      <div class="btnrow">
+        <button class="primary" id="ld-reload2">↻ 重载（bootout+bootstrap）</button>
+        <button id="ld-kick2">⚡ 立即触发</button>
+      </div>
+    </div>
+  </section>
+</main>
+<div id="toast" class="toast" style="display:none"></div>
+<script src="app.js"></script>
+</body>
+</html>

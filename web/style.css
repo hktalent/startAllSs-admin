@@ -1,0 +1,68 @@
+:root{
+  --bg:#0f1115; --panel:#171a21; --panel2:#1e222b; --border:#2a2f3a;
+  --fg:#e6e8ee; --muted:#9aa3b2; --accent:#4f8cff; --accent2:#3a6fd6;
+  --ok:#3ecf8e; --warn:#f0b429; --err:#ef5350; --chip:#232834;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--fg);
+  font:13px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif}
+a{color:var(--accent)}
+header{display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--panel);
+  border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10}
+header h1{font-size:15px;margin:0;font-weight:600}
+header .grow{flex:1}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:999px;
+  background:var(--chip);font-size:11px;color:var(--muted)}
+.pill b{color:var(--fg)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.dot.ok{background:var(--ok)} .dot.err{background:var(--err)} .dot.warn{background:var(--warn)}
+.tabs{display:flex;gap:2px;padding:0 16px;background:var(--panel);border-bottom:1px solid var(--border)}
+.tab{display:inline-flex;align-items:center;gap:6px;padding:9px 13px;cursor:pointer;color:var(--muted);
+  border-bottom:2px solid transparent;font-size:13px}
+.tab:hover{color:var(--fg)}
+.tab.active{color:var(--fg);border-bottom-color:var(--accent)}
+.tab svg{width:15px;height:15px}
+main{padding:16px;max-width:1200px;margin:0 auto}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px}
+.panel h2{font-size:13px;margin:0 0 10px;color:var(--muted);font-weight:600;letter-spacing:.3px;
+  display:flex;align-items:center;gap:8px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+.field{display:flex;flex-direction:column;gap:4px;flex:1;min-width:140px}
+.field label{font-size:11px;color:var(--muted)}
+input,select,textarea{background:var(--panel2);border:1px solid var(--border);color:var(--fg);
+  border-radius:7px;padding:6px 8px;font-size:12px;outline:none;width:100%}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+textarea{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;resize:vertical}
+button{display:inline-flex;align-items:center;gap:6px;background:var(--panel2);border:1px solid var(--border);
+  color:var(--fg);border-radius:7px;padding:6px 11px;font-size:12px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.primary:hover{background:var(--accent2)}
+button.danger{color:var(--err)}
+button svg{width:13px;height:13px}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.svc-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.svc-card{background:var(--panel2);border:1px solid var(--border);border-radius:9px;padding:11px;cursor:pointer}
+.svc-card:hover{border-color:var(--accent)}
+.svc-card.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.svc-card .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.svc-card .n{font-weight:600;margin:2px 0 4px}
+.svc-card .meta{font-size:11px;color:var(--muted)}
+.tag{display:inline-block;padding:1px 7px;border-radius:5px;background:var(--chip);font-size:10px;color:var(--muted)}
+.subrow{display:flex;gap:6px;align-items:center;margin-bottom:5px}
+.subrow input{flex:1}
+.icon-btn{padding:5px 7px;background:transparent}
+.checks{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.checks label{display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer}
+.checks input{width:auto}
+pre.out{background:#0b0d11;border:1px solid var(--border);border-radius:8px;padding:10px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;white-space:pre-wrap;
+  max-height:420px;overflow:auto;margin:8px 0 0;color:#cfd3dc}
+.toast{position:fixed;bottom:18px;right:18px;background:var(--panel2);border:1px solid var(--border);
+  border-radius:8px;padding:9px 13px;font-size:12px;z-index:50;box-shadow:0 6px 24px rgba(0,0,0,.4)}
+.toast.err{border-color:var(--err)} .toast.ok{border-color:var(--ok)}
+.muted{color:var(--muted)}
+.kv{display:grid;grid-template-columns:max-content 1fr;gap:4px 12px;font-size:12px}
+.kv .k{color:var(--muted)}
+.spin{animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}

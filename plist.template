@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.51pwn.startallss</string>
+
+    <!-- 单实例锁 + 执行 startAllSs.sh start；上一轮未结束时本轮直接跳过 -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/sh</string>
+        <string>-c</string>
+        <string>LOCK=/tmp/startAllSs.launchd.lock; /usr/bin/shlock -f "$LOCK" -p $$ || exit 0; sh {{.Script}} start; rc=$?; rm -f "$LOCK"; exit $rc</string>
+    </array>
+
+    <!-- 登录后立即运行一次 -->
+    <key>RunAtLoad</key>
+    <true/>
+
+    <!-- 自愈周期（秒），由 startAllSs-admin Web 界面配置 -->
+    <key>StartInterval</key>
+    <integer>{{.Interval}}</integer>
+
+    <!-- launchd 环境极简，补齐依赖命令路径 -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:{{.Home}}/anaconda3/bin</string>
+        <key>HOME</key>
+        <string>{{.Home}}</string>
+    </key>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/startAllSs.launchd.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/startAllSs.launchd.log</string>
+</dict>
+</plist>
