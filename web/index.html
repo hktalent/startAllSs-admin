@@ -27,7 +27,7 @@
   <!-- 服务配置 -->
   <section id="tab-svc">
     <div class="panel">
-      <h2>服务列表</h2>
+      <h2>服务列表 <button class="icon-btn" id="btn-add-svc" style="margin-left:auto" title="新增无域名映射的本地服务">＋ 新增本地服务</button></h2>
       <div class="svc-list" id="svc-list"></div>
     </div>
     <div class="panel" id="svc-editor" style="display:none">
@@ -57,7 +57,7 @@
         <div class="field"><label>本地探活路径</label><input id="ed-lpath"></div>
       </div>
       <div style="margin-top:10px">
-        <label style="font-size:11px;color:var(--muted)">公网子域名（子域名 + 探活路径）</label>
+        <label style="font-size:11px;color:var(--muted)">公网子域名（子域名 + 探活路径）；全部留空 = 无域名映射，仅本地托管</label>
         <div id="ed-publics"></div>
         <button class="icon-btn" id="ed-add-pub" style="margin-top:4px">＋ 增加子域名</button>
       </div>

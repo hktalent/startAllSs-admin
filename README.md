@@ -127,6 +127,18 @@ rm ~/Library/LaunchAgents/com.51pwn.startallss-admin.plist
 
 > 服务的 `key`（chat/platform/...）决定它映射到脚本的哪组变量，**不可在界面修改**，避免映射错乱。
 
+#### 新增：无域名映射的本地服务
+
+点「＋ 新增本地服务」可以登记任意**没有公网域名**的本地服务（内网页面、本机 Docker 项目、tmux 进程等）：
+
+- 这类服务的 `publics` 留空即可，**不会再被自动补子域名**，也不会参与公网 `https://xxx` 校验。
+- 生成配置时不写 `*_PUBLIC_URL`，而是统一输出到 `LOCAL_SERVICE_COUNT` / `LOCAL_SERVICE_<n>`，由 `startAllSs.sh` 的通用逻辑托管：
+  - **启动**：容器没跑 → `docker compose up -d`；容器存在但停止 → `docker start`；tmux 会话不存在 → 新建。
+  - **修复**：本地 HTTP 探活不通时，自动 `docker compose restart` / `docker restart` / 重建 tmux 会话，再探一次。
+  - **状态监测**：`status` 打印每个容器状态与本地 HTTP 码，`check` 只读校验，`stop` 一并停止。
+- 支持三种类型：`docker-compose`（可管多个容器）、`docker-single`、`tmux`。
+- 内置的 `rcm`（remote-connect-manager，`http://127.0.0.1:8088`）就是这样一个例子：双容器 `remote-connect-manager` + `rcm-guacd`，无域名映射。
+
 ### 2. 全局
 
 - 根域名 `baseDomain`：子域名统一拼成 `<subdomain>.<baseDomain>`。
@@ -169,6 +181,16 @@ SAS_CONFIG="${SAS_CONFIG:-$SAS_SELF_DIR/startAllSs.config}"
 
 - 有 `startAllSs.config` 时，以其中的值为准；
 - 没有该文件（或解析失败）时，完全回退到脚本内置默认值 —— **不配置 = 原行为**。
+
+无域名映射的本地服务用另一套变量传递，每行一条：
+
+```sh
+LOCAL_SERVICE_COUNT='1'
+LOCAL_SERVICE_1='rcm|remote-connect-manager|docker-compose|/Users/51pwn/MyWork/remote-connect-manager|remote-connect-manager rcm-guacd|http://127.0.0.1:8088|/|-|-'
+# key|名称|类型|目录|容器(空格分隔)|本地URL|探活路径|tmux会话|启动命令（空字段写 -）
+```
+
+脚本据此逐条执行「拉起 / 修复 / 探活」，不碰任何公网域名相关逻辑；`LOCAL_SERVICE_COUNT=0`（或变量缺失）时该段完全不生效。
 
 自愈周期不写进脚本，而是写到 LaunchAgent plist 的 `StartInterval`，由 launchd 按周期触发 `startAllSs.sh start`。
 

@@ -18,19 +18,20 @@ type PublicEntry struct {
 
 // Service 单个被 startAllSs.sh 托管的服务。
 type Service struct {
-	Key             string        `json:"key"`             // 脚本变量前缀：chat/platform/scrcpy/strategy/qs/vi/gp
-	Name            string        `json:"name"`            // 展示名
-	Type            string        `json:"type"`            // docker-single | docker-compose | tmux
-	Enabled         bool          `json:"enabled"`         // 是否纳入托管（仅展示，实际跳过走 skipFlags）
-	Dir             string        `json:"dir"`             // 项目根目录
-	Containers      []string      `json:"containers"`      // docker 容器名（可多个，平台栈用）
-	Command         string        `json:"command"`         // 启动命令（如 gp: python3 ./run.py）
-	LocalScheme     string        `json:"localScheme"`     // http | https
-	LocalHost       string        `json:"localHost"`       // 一般 127.0.0.1
-	LocalPort       int           `json:"localPort"`       // 本地端口
-	LocalHealthPath string        `json:"localHealthPath"` // 本地探活路径
-	TmuxSession     string        `json:"tmuxSession"`     // tmux 会话名（tmux 类型）
-	Publics         []PublicEntry `json:"publics"`         // 公网子域名列表
+	Key             string        `json:"key"`               // 脚本变量前缀：chat/platform/scrcpy/strategy/qs/vi/gp（其它 key 走通用本地服务）
+	Name            string        `json:"name"`              // 展示名
+	Type            string        `json:"type"`              // docker-single | docker-compose | tmux
+	Builtin         bool          `json:"builtin,omitempty"` // 内置服务（升级后会按 key 自动补回到旧配置）
+	Enabled         bool          `json:"enabled"`           // 是否纳入托管（通用本地服务按此开关渲染）
+	Dir             string        `json:"dir"`               // 项目根目录
+	Containers      []string      `json:"containers"`        // docker 容器名（可多个，平台栈用）
+	Command         string        `json:"command"`           // 启动命令（如 gp: python3 ./run.py）
+	LocalScheme     string        `json:"localScheme"`       // http | https
+	LocalHost       string        `json:"localHost"`         // 一般 127.0.0.1
+	LocalPort       int           `json:"localPort"`         // 本地端口
+	LocalHealthPath string        `json:"localHealthPath"`   // 本地探活路径
+	TmuxSession     string        `json:"tmuxSession"`       // tmux 会话名（tmux 类型）
+	Publics         []PublicEntry `json:"publics"`           // 公网子域名列表
 	// vi 专属
 	QdrantPort  int    `json:"qdrantPort,omitempty"`
 	BinPath     string `json:"binPath,omitempty"`
@@ -90,15 +91,15 @@ func defaultConfig() Config {
 		SkipFlags: SkipFlags{},
 		Services: []Service{
 			{
-				Key: "chat", Name: "E2E_chat", Type: "docker-single", Enabled: true,
+				Key: "chat", Name: "E2E_chat", Type: "docker-single", Builtin: true, Enabled: true,
 				Dir: "/Users/51pwn/MyWork/E2E_chat/app", Containers: []string{"e2e_chat"},
 				LocalScheme: "https", LocalHost: "127.0.0.1", LocalPort: 2083, LocalHealthPath: "/",
 				Publics: []PublicEntry{{Subdomain: "chat", HealthPath: "/"}},
 			},
 			{
-				Key: "platform", Name: "51pwn 平台栈", Type: "docker-compose", Enabled: true,
-				Dir: "/Users/51pwn/Documents/Trae-CN/temp_20261103_02/51pwn-docker",
-				Containers: []string{"51pwn-platform", "51pwn-nginx", "51pwn-cloudflared"},
+				Key: "platform", Name: "51pwn 平台栈", Type: "docker-compose", Builtin: true, Enabled: true,
+				Dir:         "/Users/51pwn/Documents/Trae-CN/temp_20261103_02/51pwn-docker",
+				Containers:  []string{"51pwn-platform", "51pwn-nginx", "51pwn-cloudflared"},
 				LocalScheme: "http", LocalHost: "127.0.0.1", LocalPort: 9080, LocalHealthPath: "/",
 				Publics: []PublicEntry{
 					{Subdomain: "www", HealthPath: "/"},
@@ -106,37 +107,45 @@ func defaultConfig() Config {
 				},
 			},
 			{
-				Key: "scrcpy", Name: "ws-scrcpy-home-control", Type: "docker-single", Enabled: true,
+				Key: "scrcpy", Name: "ws-scrcpy-home-control", Type: "docker-single", Builtin: true, Enabled: true,
 				Dir: "/Users/51pwn/MyWork/ws-scrcpy-home-control", Containers: []string{"ws-scrcpy-home"},
 				LocalScheme: "http", LocalHost: "127.0.0.1", LocalPort: 8080, LocalHealthPath: "/api/health",
 				Publics: []PublicEntry{{Subdomain: "tv", HealthPath: "/"}},
 			},
 			{
-				Key: "strategy", Name: "strategy-web", Type: "docker-single", Enabled: true,
+				Key: "strategy", Name: "strategy-web", Type: "docker-single", Builtin: true, Enabled: true,
 				Dir: "/Users/51pwn/MyWork/strategy-web", Containers: []string{"strategy-web"},
 				LocalScheme: "http", LocalHost: "127.0.0.1", LocalPort: 3000, LocalHealthPath: "/api/meta",
 				Publics: []PublicEntry{{Subdomain: "stock", HealthPath: "/"}},
 			},
 			{
-				Key: "qs", Name: "QuietShield", Type: "tmux", Enabled: true,
+				Key: "qs", Name: "QuietShield", Type: "tmux", Builtin: true, Enabled: true,
 				Dir: "/Users/51pwn/MyWork/QuietShield", TmuxSession: "quietshield",
 				LocalScheme: "https", LocalHost: "127.0.0.1", LocalPort: 8808, LocalHealthPath: "/",
 				Publics: []PublicEntry{{Subdomain: "zs", HealthPath: "/"}},
 			},
 			{
-				Key: "vi", Name: "vi · 见到你", Type: "tmux", Enabled: true,
+				Key: "vi", Name: "vi · 见到你", Type: "tmux", Builtin: true, Enabled: true,
 				Dir: "/Users/51pwn/MyWork/vi", TmuxSession: "vi",
 				LocalScheme: "http", LocalHost: "127.0.0.1", LocalPort: 8688, LocalHealthPath: "/api/health",
-				QdrantPort: 6333, BinPath: "$VI_DIR/bin/vi", LogDir: "$VI_DIR/data",
-				StopScript: "$VI_DIR/stop.sh", StartScript: "$VI_DIR/start.sh",
+				QdrantPort: 6333, BinPath: "/Users/51pwn/MyWork/vi/bin/vi", LogDir: "/Users/51pwn/MyWork/vi/data",
+				StopScript: "/Users/51pwn/MyWork/vi/stop.sh", StartScript: "/Users/51pwn/MyWork/vi/start.sh",
 				Publics: []PublicEntry{{Subdomain: "vi", HealthPath: "/"}},
 			},
 			{
-				Key: "gp", Name: "gp · 股票系统", Type: "tmux", Enabled: true,
+				Key: "gp", Name: "gp · 股票系统", Type: "tmux", Builtin: true, Enabled: true,
 				Dir: "/Users/51pwn/MyWork/stock-system", TmuxSession: "gp",
 				Command: "python3 ./run.py", Python: "python3",
 				LocalScheme: "http", LocalHost: "127.0.0.1", LocalPort: 8010, LocalHealthPath: "/",
 				Publics: []PublicEntry{{Subdomain: "gp", HealthPath: "/"}},
+			},
+			{
+				// 无域名映射的本地服务示例：docker compose 双容器（应用 + guacd）
+				Key: "rcm", Name: "remote-connect-manager", Type: "docker-compose", Builtin: true, Enabled: true,
+				Dir:         "/Users/51pwn/MyWork/remote-connect-manager",
+				Containers:  []string{"remote-connect-manager", "rcm-guacd"},
+				LocalScheme: "http", LocalHost: "127.0.0.1", LocalPort: 8088, LocalHealthPath: "/",
+				Publics: []PublicEntry{},
 			},
 		},
 	}
@@ -182,8 +191,24 @@ func (c *Config) fillDefaults() {
 		if s.LocalHealthPath == "" {
 			s.LocalHealthPath = "/"
 		}
-		if len(s.Publics) == 0 {
-			s.Publics = []PublicEntry{{Subdomain: s.Key, HealthPath: "/"}}
+		if s.Type == "" {
+			s.Type = "docker-single"
+		}
+		// 注意：publics 允许为空 —— 空表示「无域名映射的纯本地服务」，由脚本通用逻辑托管，
+		// 不要在这里补默认子域名，否则会被误当成需要公网校验的服务。
+	}
+	c.mergeBuiltins()
+}
+
+// mergeBuiltins 把新增的内置服务补进旧 config.json（已存在同 key 的不动，删除过的内置服务会被补回）。
+func (c *Config) mergeBuiltins() {
+	have := make(map[string]bool, len(c.Services))
+	for _, s := range c.Services {
+		have[s.Key] = true
+	}
+	for _, d := range defaultConfig().Services {
+		if d.Builtin && !have[d.Key] {
+			c.Services = append(c.Services, d)
 		}
 	}
 }
@@ -274,6 +299,10 @@ func (c *Config) RenderShellConfig() string {
 		}
 	}
 
+	// 非内置 key 的服务 = 无域名映射的本地服务，统一交给脚本的 LOCAL_SERVICE_* 通用逻辑
+	localCount := 0
+	var localLines strings.Builder
+
 	for _, k := range keys {
 		s := byKey[k]
 		b.WriteString("\n# --- " + s.Name + " (" + k + ") ---\n")
@@ -306,22 +335,68 @@ func (c *Config) RenderShellConfig() string {
 			writeCommon("VI", s)
 			w("VI_TMUX_SESSION", s.TmuxSession)
 			wInt("VI_QDRANT_PORT", s.QdrantPort)
-			w("VI_BIN_PATH", s.BinPath)
-			w("VI_LOG_DIR", s.LogDir)
-			w("VI_STOP_SCRIPT", s.StopScript)
-			w("VI_START_SCRIPT", s.StartScript)
+			// 生成的是 shell 单引号字面量，$VI_DIR 不会展开 → 这里直接落成绝对路径
+			expandDir := func(v string) string {
+				return strings.ReplaceAll(v, "$VI_DIR", s.Dir)
+			}
+			w("VI_BIN_PATH", expandDir(s.BinPath))
+			w("VI_LOG_DIR", expandDir(s.LogDir))
+			w("VI_STOP_SCRIPT", expandDir(s.StopScript))
+			w("VI_START_SCRIPT", expandDir(s.StartScript))
 		case "gp":
 			writeCommon("GP", s)
 			w("GP_TMUX_SESSION", s.TmuxSession)
 			w("GP_PYTHON", s.Python)
 			w("GP_RUN_CMD", s.Command)
 		default:
-			// 未知 key：尽力输出通用变量，便于扩展
-			writeCommon(strings.ToUpper(k), s)
-			if len(s.Containers) > 0 {
-				w(strings.ToUpper(k)+"_CONTAINER", s.Containers[0])
+			// 新增的本地服务（无域名映射）：不生成 *_PUBLIC_URL，只登记到 LOCAL_SERVICE_*
+			if !s.Enabled {
+				b.WriteString("# （已停用，不纳入托管）\n")
+				continue
 			}
+			localCount++
+			localLines.WriteString(fmt.Sprintf("LOCAL_SERVICE_%d=%s\n", localCount, shellQuote(localServiceEntry(s))))
 		}
 	}
+
+	b.WriteString("\n# --- 无域名映射的本地服务（通用托管：拉起 / 修复 / 状态监测）---\n")
+	b.WriteString(fmt.Sprintf("LOCAL_SERVICE_COUNT=%s\n", shellQuote(fmt.Sprintf("%d", localCount))))
+	b.WriteString(localLines.String())
 	return b.String()
+}
+
+// localServiceEntry 渲染成脚本可解析的单行条目：
+// key|名称|类型|目录|容器(空格分隔)|本地URL|探活路径|tmux会话|启动命令
+func localServiceEntry(s Service) string {
+	clean := func(v string) string {
+		v = strings.ReplaceAll(v, "|", "/")
+		v = strings.ReplaceAll(v, "\n", " ")
+		v = strings.TrimSpace(v)
+		if v == "" {
+			return "-"
+		}
+		return v
+	}
+	containers := "-"
+	if len(s.Containers) > 0 {
+		containers = strings.Join(s.Containers, " ")
+	}
+	scheme := s.LocalScheme
+	if scheme == "" {
+		scheme = "http"
+	}
+	host := s.LocalHost
+	if host == "" {
+		host = "127.0.0.1"
+	}
+	url := "-"
+	if s.LocalPort > 0 {
+		url = localURL(scheme, host, s.LocalPort)
+	}
+	fields := []string{
+		clean(s.Key), clean(s.Name), clean(s.Type), clean(s.Dir),
+		clean(containers), clean(url), clean(s.LocalHealthPath),
+		clean(s.TmuxSession), clean(s.Command),
+	}
+	return strings.Join(fields, "|")
 }

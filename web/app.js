@@ -56,10 +56,10 @@ function renderSvcList() {
     card.className = 'svc-card' + (i === selIdx ? ' active' : '');
     const pub = (s.publics || []).map(p => p.subdomain).filter(Boolean).join(',');
     card.innerHTML = `
-      <div class="k">${s.key} <span class="tag">${s.type}</span></div>
+      <div class="k">${s.key} <span class="tag">${s.type}</span>${s.builtin ? '' : ' <span class="tag">本地</span>'}</div>
       <div class="n">${s.name || '(未命名)'}</div>
       <div class="meta">📁 ${s.dir || '-'}</div>
-      <div class="meta">🐳 ${(s.containers || []).join(', ') || '-'}　→　${pub || '-'}</div>
+      <div class="meta">🐳 ${(s.containers || []).join(', ') || '-'}　→　${pub || '仅本地（无域名映射）'}</div>
       <div class="meta">🔌 ${s.localScheme}://${s.localHost}:${s.localPort}${s.localHealthPath || ''}</div>`;
     card.onclick = () => { selIdx = i; renderSvcList(); renderEditor(); };
     box.appendChild(card);
@@ -82,7 +82,7 @@ function renderEditor() {
   document.getElementById('ed-host').value = s.localHost || '127.0.0.1';
   document.getElementById('ed-port').value = s.localPort || '';
   document.getElementById('ed-lpath').value = s.localHealthPath || '/';
-  if (!s.publics || s.publics.length === 0) s.publics = [{ subdomain: s.key, healthPath: '/' }];
+  if (!s.publics) s.publics = [];   // 空 = 无域名映射，仅本地托管（不自动补子域名）
   renderPublics();
   renderExtras();
   document.getElementById('ed-preview').style.display = 'none';
@@ -110,11 +110,35 @@ function renderPublics() {
   box.querySelectorAll('[data-del]').forEach(b => {
     b.onclick = () => { s.publics.splice(+b.dataset.del, 1); renderPublics(); };
   });
+  if (s.publics.length === 0) {
+    const hint = document.createElement('div');
+    hint.className = 'meta';
+    hint.style.color = 'var(--muted)';
+    hint.textContent = '无公网入口：纯本地服务，脚本只做拉起 / 修复 / 本地探活（不校验域名）';
+    box.appendChild(hint);
+  }
 }
 
 document.getElementById('ed-add-pub').onclick = () => {
   cfg.services[selIdx].publics.push({ subdomain: '', healthPath: '/' });
   renderPublics();
+};
+
+/* 新增一个无域名映射的本地服务（非内置 key，走脚本的 LOCAL_SERVICE_* 通用托管） */
+document.getElementById('btn-add-svc').onclick = () => {
+  const key = (prompt('服务 key（英文/数字/-，如 rcm2、nas-web）：') || '').trim();
+  if (!key) return;
+  if (!/^[a-zA-Z][a-zA-Z0-9_-]*$/.test(key)) return toast('key 只能以字母开头，可含数字、_ -', 'err');
+  if (cfg.services.some(s => s.key === key)) return toast('key 已存在', 'err');
+  cfg.services.push({
+    key, name: key, type: 'docker-compose', enabled: true,
+    dir: '', containers: [], command: '',
+    localScheme: 'http', localHost: '127.0.0.1', localPort: 0, localHealthPath: '/',
+    tmuxSession: '', publics: [],
+  });
+  selIdx = cfg.services.length - 1;
+  renderSvcList(); renderEditor();
+  toast('已新增，填好后点「保存」或「应用配置」');
 };
 
 function renderExtras() {
